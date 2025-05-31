@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Web Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f4f4f4; }
+        #chat-header { background-color: #333; color: white; padding: 10px 20px; text-align: center; }
+        #chat-container { flex-grow: 1; display: flex; flex-direction: column; max-width: 800px; width: 100%; margin: 20px auto; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
+        #messages { list-style-type: none; margin: 0; padding: 20px; overflow-y: auto; flex-grow: 1; border-bottom: 1px solid #eee; }
+        #messages li { padding: 8px 12px; margin-bottom: 10px; border-radius: 5px; word-wrap: break-word; }
+        #messages li.my-message { background-color: #dcf8c6; margin-left: auto; max-width: 70%; text-align: right; }
+        #messages li.other-message { background-color: #f1f0f0; margin-right: auto; max-width: 70%; text-align: left; }
+        #messages li strong { display: block; margin-bottom: 4px; font-size: 0.9em; color: #555; }
+        #messages li.system-message { font-style: italic; color: #777; text-align: center; background-color: transparent; font-size: 0.9em; }
+        #form { display: flex; padding: 10px; border-top: 1px solid #eee;}
+        #input { border: 1px solid #ccc; padding: 10px; flex-grow: 1; border-radius: 5px 0 0 5px; }
+        #send-button { background-color: #5cb85c; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 0 5px 5px 0; }
+        #send-button:hover { background-color: #4cae4c; }
+        #username-prompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        #username-form { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.2); text-align: center; }
+        #username-input { padding: 10px; margin-bottom: 15px; width: 200px; border: 1px solid #ccc; border-radius: 4px; }
+        #username-submit { background-color: #5cb85c; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div id="username-prompt">
+        <div id="username-form">
+            <h2>Enter Your Name</h2>
+            <input type="text" id="username-input" placeholder="Your Name" autofocus autocomplete="off">
+            <button id="username-submit">Join Chat</button>
+        </div>
+    </div>
+
+    <div id="chat-header">
+        <h1>Secure Web Chat</h1>
+    </div>
+
+    <div id="chat-container">
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off" placeholder="Type a message..." /><button id="send-button">Send</button>
+        </form>
+    </div>
+
+    <script>
+        // Ensure the scheme is wss if on https, ws if on http
+        // Since we force HTTPS, we can hardcode wss or let socket.io figure it out.
+        // Correctly forming the WebSocket URL (it defaults well but explicit can be good)
+        // For this demo, io() will connect to the same host/port serving the page.
+        const socket = io(); // For same-origin connection with TLS, io() is fine.
+                            // Or be explicit: const socket = io('https://' + document.domain + ':' + location.port);
+        let myUsername = '';
+
+        const messages = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const usernamePrompt = document.getElementById('username-prompt');
+        const usernameInput = document.getElementById('username-input');
+        const usernameSubmit = document.getElementById('username-submit');
+
+        function submitUsername() {
+            const name = usernameInput.value.trim();
+            if (name) {
+                myUsername = name;
+                socket.emit('join', { username: myUsername });
+                usernamePrompt.style.display = 'none';
+                input.focus();
+            } else {
+                alert('Please enter a username.');
+            }
+        }
+        usernameSubmit.onclick = submitUsername;
+        usernameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitUsername();
+            }
+        });
+
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat_message', { msg: input.value });
+                input.value = '';
+            }
+        });
+
+        socket.on('new_message', function(data) {
+            const item = document.createElement('li');
+            item.innerHTML = `<strong>${data.username}</strong>${data.msg}`;
+            if (data.username === myUsername) {
+                item.classList.add('my-message');
+            } else {
+                item.classList.add('other-message');
+            }
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight; // Auto-scroll to bottom
+        });
+
+        socket.on('user_status', function(data) {
+            const item = document.createElement('li');
+            item.classList.add('system-message');
+            if (data.status === 'joined') {
+                item.textContent = `${data.username} has joined the chat.`;
+            } else if (data.status === 'left') {
+                item.textContent = `${data.username} has left the chat.`;
+            }
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+        socket.on('system_message', function(data) {
+            const item = document.createElement('li');
+            item.classList.add('system-message');
+            item.textContent = data.msg;
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+        // For debugging connection issues
+        socket.on("connect_error", (err) => {
+            console.error("Connection Error:", err.message);
+            const item = document.createElement('li');
+            item.classList.add('system-message');
+            item.style.color = 'red';
+            item.textContent = `Connection Error: ${err.message}. Ensure server is running with HTTPS and you've accepted the self-signed certificate warning.`;
+            messages.appendChild(item);
+        });
+        socket.on("disconnect", (reason) => {
+            console.log("Disconnected:", reason);
+             const item = document.createElement('li');
+            item.classList.add('system-message');
+            item.style.color = 'orange';
+            item.textContent = `Disconnected: ${reason}. Attempting to reconnect...`;
+            messages.appendChild(item);
+        });
+
+    </script>
+</body>
+</html>

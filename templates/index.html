@@ -7,48 +7,60 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f0f2f5; color: #333; }
-        #top-bar { display: flex; justify-content: space-between; align-items: center; background-color: #4a5568; /* Tailwind Slate 700 */ color: white; padding: 12px 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #top-bar { display: flex; justify-content: space-between; align-items: center; background-color: #4a5568; color: white; padding: 12px 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; }
         #top-bar h1 { margin: 0; font-size: 1.6em; font-weight: 600; }
         #top-bar .user-info { font-size: 0.95em; }
-        #top-bar a { color: #cbd5e0; /* Tailwind Slate 300 */ text-decoration: none; padding: 6px 12px; border-radius: 4px; margin-left: 15px; transition: background-color 0.2s; }
-        #top-bar a:hover { background-color: #2d3748; /* Tailwind Slate 800 */ }
+        #top-bar a { color: #cbd5e0; text-decoration: none; padding: 6px 12px; border-radius: 4px; margin-left: 15px; transition: background-color 0.2s; }
+        #top-bar a:hover { background-color: #2d3748; }
         #main-content { display: flex; flex-grow: 1; overflow: hidden; }
-        #sidebar { width: 250px; background-color: #edf2f7; /* Tailwind Slate 200 */ padding: 20px; border-right: 1px solid #e2e8f0; /* Tailwind Slate 300 */ display: flex; flex-direction: column; overflow-y: auto; }
+        #sidebar { width: 250px; min-width: 200px; background-color: #edf2f7; padding: 20px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow-y: auto; }
         #sidebar h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.1em; color: #2d3748; border-bottom: 1px solid #cbd5e0; padding-bottom: 8px;}
         #sidebar ul { list-style-type: none; padding: 0; margin: 0 0 25px 0; }
-        #sidebar ul li button { display: block; width: 100%; padding: 10px 12px; margin-bottom: 6px; background-color: #fff; border: 1px solid #cbd5e0; text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.95em; transition: background-color 0.2s, border-color 0.2s; }
+        #sidebar ul li button { display: block; width: 100%; padding: 10px 12px; margin-bottom: 6px; background-color: #fff; border: 1px solid #cbd5e0; text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.95em; transition: background-color 0.2s, border-color 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #sidebar ul li button:hover { background-color: #e2e8f0; border-color: #a0aec0; }
-        #sidebar ul li button.active { background-color: #68d391; /* Tailwind Green 400 */ color: white; border-color: #68d391; font-weight: 500; }
+        #sidebar ul li button.active { background-color: #68d391; color: white; border-color: #68d391; font-weight: 500; }
         #sidebar .create-room-section input[type="text"] { width: calc(100% - 22px); padding: 8px 10px; margin-bottom: 8px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        #sidebar .create-room-section button { width: 100%; padding: 9px; background-color: #4299e1; /* Tailwind Blue 500 */ color:white; border:none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;}
-        #sidebar .create-room-section button:hover { background-color: #3182ce; /* Tailwind Blue 600 */ }
+        #sidebar .create-room-section button { width: 100%; padding: 9px; background-color: #4299e1; color:white; border:none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;}
+        #sidebar .create-room-section button:hover { background-color: #3182ce; }
         #chat-wrapper { flex-grow: 1; display: flex; flex-direction: column; background-color: #fff; }
-        #chat-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0px 20px 0px 20px; } /* padding for scrollbar space */
+        #chat-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0px 20px 0px 20px; }
         #messages { list-style-type: none; margin: 0; padding: 20px 0; overflow-y: auto; flex-grow: 1; }
-        #messages li { padding: 10px 15px; margin-bottom: 12px; border-radius: 8px; word-wrap: break-word; max-width: 75%; line-height: 1.4; }
-        #messages li.my-message { background-color: #68d391; /* Tailwind Green 400 */ color: white; margin-left: auto; text-align: left; } /* Changed my messages to left align text too */
-        #messages li.other-message { background-color: #e2e8f0; /* Tailwind Slate 300 */ color: #2d3748; margin-right: auto; }
-        #messages li strong { font-weight: 600; display: inline-block; margin-right: 8px; }
-        #messages li .msg-meta { font-size: 0.8em; color: #a0aec0; margin-top:3px; display:block; }
-        #messages li.my-message .msg-meta { color: #f7fafc; } /* Lighter meta for dark bg */
-        #messages li.other-message .mute-btn { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; background-color: #ecc94b; border:none; border-radius:3px; cursor:pointer;}
-        #messages li.other-message .mute-btn:hover { background-color: #d69e2e; }
-        #messages li.system-message { font-style: italic; color: #718096; /* Tailwind Slate 500 */ text-align: center; background-color: transparent; font-size: 0.9em; padding: 8px 0; }
-        #form { display: flex; padding: 15px 20px; border-top: 1px solid #e2e8f0; background-color: #f7fafc; /* Tailwind Slate 100 */}
+        #messages li { position:relative; padding: 10px 15px; margin-bottom: 12px; border-radius: 8px; word-wrap: break-word; max-width: 75%; line-height: 1.4; clear: both; } /* clear for float */
+        #messages li.my-message { background-color: #68d391; color: white; margin-left: auto; float: right; text-align: left; }
+        #messages li.other-message { background-color: #e2e8f0; color: #2d3748; margin-right: auto; float: left; }
+        #messages li strong { font-weight: 600; display: block; margin-bottom: 3px; }
+        #messages li .msg-content { display: block; }
+        #messages li .msg-meta { font-size: 0.75em; color: #a0aec0; margin-top:4px; display:block; text-align: right; }
+        #messages li.my-message .msg-meta { color: #f0fff4; } /* Lighter for own messages */
+        #messages li .msg-actions { position: absolute; top: 2px; right: 5px; opacity: 0.3; transition: opacity 0.2s;}
+        #messages li:hover .msg-actions { opacity: 1;}
+        #messages li.my-message .msg-actions { right: 5px; } /* Adjust position for my messages */
+        #messages li.other-message .msg-actions { right: 5px; }
+        #messages li .msg-actions button { font-size: 0.75em; padding: 2px 5px; margin-left: 5px; border:none; border-radius:3px; cursor:pointer; background-color: #a0aec0; color:white; }
+        #messages li .mute-btn { background-color: #ecc94b; color: #744210; }
+        #messages li .mute-btn:hover { background-color: #d69e2e; }
+        #messages li .delete-btn { background-color: #f56565; }
+        #messages li .delete-btn:hover { background-color: #c53030; }
+        #messages li.deleted-message { background-color: #f7fafc !important; color: #a0aec0 !important; font-style: italic; border: 1px dashed #e2e8f0; padding: 8px 12px !important; }
+        #messages li.deleted-message strong, #messages li.deleted-message .msg-actions, #messages li.deleted-message .msg-content { display: none !important; }
+
+        #messages li.system-message { float: none; max-width:100%; font-style: italic; color: #718096; text-align: center; background-color: transparent; font-size: 0.9em; padding: 8px 0; }
+        #form { display: flex; padding: 15px 20px; border-top: 1px solid #e2e8f0; background-color: #f7fafc; }
         #input { border: 1px solid #cbd5e0; padding: 12px; flex-grow: 1; border-radius: 5px 0 0 5px; font-size: 1em; }
         #input:disabled { background-color: #edf2f7; cursor: not-allowed; }
-        #send-button { background-color: #48bb78; /* Tailwind Green 500 */ color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 0 5px 5px 0; font-size: 1em; transition: background-color 0.2s;}
-        #send-button:hover { background-color: #38a169; /* Tailwind Green 600 */ }
-        #admin-panel { background-color: #f7fafc; padding: 15px; border-top: 1px solid #e2e8f0; margin-top: auto; }
-        #admin-panel h4 { margin-top: 0; }
-        #admin-user-list li { font-size: 0.9em; padding: 4px 0; }
+        #send-button { background-color: #48bb78; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 0 5px 5px 0; font-size: 1em; transition: background-color 0.2s;}
+        #send-button:hover { background-color: #38a169; }
+        #admin-panel { background-color: #f7fafc; padding: 15px; border-top: 1px solid #e2e8f0; margin-top: auto; } /* Pushes to bottom */
+        #admin-panel h4 { margin-top: 0; font-size: 1em; }
+        #admin-user-list li { font-size: 0.85em; padding: 3px 0; border-bottom: 1px dotted #e2e8f0; }
+        #admin-user-list li:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
     <div id="top-bar">
-        <h1>Secure Web Chat - <span id="current-room-display">General Chat</span></h1>
+        <h1>Secure Chat - <span id="current-room-display">Loading...</span></h1>
         <div class="user-info">
-            <span>Welcome, {{ session.display_name }} ({{ session.role }})</span>
+            <span>Welcome, {{ session.display_name }} (Role: {{ user_role }})</span>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     </div>
@@ -56,9 +68,7 @@
     <div id="main-content">
         <div id="sidebar">
             <h3>Chat Rooms</h3>
-            <ul id="room-list">
-                {# Rooms will be populated by JavaScript #}
-            </ul>
+            <ul id="room-list"></ul>
             {% if user_role == 'teacher' or user_role == 'administrator' %}
             <div class="create-room-section" style="margin-top: 20px;">
                 <h4>Create New Room</h4>
@@ -66,14 +76,10 @@
                 <button id="create-room-btn">Create Room</button>
             </div>
             {% endif %}
-
             {% if user_role == 'administrator' %}
-            <div id="admin-panel" style="margin-top:auto;"> {# Pushes to bottom #}
-                <h4>Connected Users</h4>
-                <ul id="admin-user-list">
-                    {# User list will be populated here by JS #}
-                    <li>Loading...</li>
-                </ul>
+            <div id="admin-panel">
+                <h4>Connected Users (<span id="user-count">0</span>)</h4>
+                <ul id="admin-user-list"><li>Loading...</li></ul>
             </div>
             {% endif %}
         </div>
@@ -89,11 +95,11 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({ autoConnect: false }); // autoConnect false to wait for session info
         let currentRoom = "";
         const userDisplayName = "{{ session.display_name }}";
         const userRole = "{{ user_role }}";
-        const currentUsername = "{{ current_username }}"; // The actual username, not display name
+        const currentUsername = "{{ current_username }}"; // Actual unique username from Flask session
 
         const messagesEl = document.getElementById('messages');
         const formEl = document.getElementById('form');
@@ -103,6 +109,16 @@
         const newRoomNameInput = document.getElementById('new-room-name');
         const currentRoomDisplayEl = document.getElementById('current-room-display');
         const adminUserListEl = document.getElementById('admin-user-list');
+        const userCountEl = document.getElementById('user-count');
+
+
+        function formatTimestamp(isoString) {
+            if (!isoString) return '';
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+            } catch (e) { return ''; }
+        }
 
         function escapeHTML(str) {
     // Basic escaping for display in HTML. More robust libraries (e.g. DOMPurify) for complex scenarios.
@@ -110,57 +126,72 @@
         '&': '&',
         '<': '<',
         '>': '>',
-        "'": "'",
+        "'": "'", 
         '"': '"'
     }[tag] || tag));
 }
 
 
-        function addMessageToList(data, type = 'other') {
+        function addMessageToList(data, type = 'chat', isPastMessage = false) {
             const item = document.createElement('li');
+            item.dataset.messageId = data.id;
             let contentHTML = '';
+
             if (type === 'system') {
                 item.classList.add('system-message');
                 contentHTML = escapeHTML(data.msg);
-            } else {
-                const isMyMessage = data.username === userDisplayName;
+            } else { // 'chat' type
+                const isMyMessage = data.actual_username === currentUsername;
                 item.classList.add(isMyMessage ? 'my-message' : 'other-message');
 
-                contentHTML = `<strong>${escapeHTML(data.username)}</strong> ${escapeHTML(data.msg)}`;
-
-                // Add mute button for teachers on other users' messages (if they are students)
+                let actionsHTML = '<span class="msg-actions">';
                 if (userRole === 'teacher' && !isMyMessage && data.role === 'student') {
-                    // Pass actual username (not display name) for mute action
-                    const actualUsernameToMute = data.original_username || data.username; // Fallback
-                    contentHTML += ` <button class="mute-btn" data-username="${escapeHTML(actualUsernameToMute)}">Mute/Unmute</button>`;
+                    actionsHTML += ` <button class="mute-btn" data-username="${escapeHTML(data.actual_username)}">Mute</button>`;
+                }
+                if ((userRole === 'administrator' || userRole === 'teacher') || (isMyMessage)) {
+                     actionsHTML += ` <button class="delete-btn" data-message-id="${escapeHTML(data.id || '')}">Del</button>`;
+                }
+                actionsHTML += '</span>';
+
+                contentHTML = `<strong>${escapeHTML(data.username)}</strong> <span class="msg-content">${escapeHTML(data.msg)}</span> ${actionsHTML}`;
+                if (data.timestamp) {
+                    contentHTML += `<span class="msg-meta">${formatTimestamp(data.timestamp)}</span>`;
                 }
             }
             item.innerHTML = contentHTML;
-            messagesEl.appendChild(item);
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            if (isPastMessage) messagesEl.insertBefore(item, messagesEl.firstChild);
+            else messagesEl.appendChild(item);
+
+            if (!isPastMessage || messagesEl.children.length < 10) { // Don't auto-scroll if loading lots of history unless it's short
+                 messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
         }
 
-        function updateActiveRoomButton(roomName) {
-            currentRoomDisplayEl.textContent = escapeHTML(roomName) || "No Room";
+        function updateActiveRoomButtonUI(roomName) {
+            currentRoomDisplayEl.textContent = escapeHTML(roomName) || "No Room Selected";
             document.querySelectorAll('#room-list button').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.room === roomName);
             });
         }
 
         socket.on('connection_ack', (data) => {
-            console.log('Socket.IO connection acknowledged by server.', data);
-            updateRoomList(data.rooms);
-            // Client explicitly requests to join the first room or a stored preferred room.
-            const initialRoom = data.rooms.length > 0 ? data.rooms[0] : null;
-            if(initialRoom) {
+            console.log('Socket.IO connection acknowledged. All Rooms:', data.all_rooms);
+            updateRoomListUI(data.all_rooms);
+            const initialRoom = data.all_rooms && data.all_rooms.length > 0 ? data.all_rooms[0] : null;
+            if(initialRoom && !currentRoom) { // Join initial room if not already in one
+                console.log("Requesting to join initial room:", initialRoom);
                 socket.emit('join_room_request', { room: initialRoom });
-            } else {
-                 addMessageToList({ msg: "No rooms available to join initially." }, 'system');
+            } else if (!initialRoom) {
+                 addMessageToList({ msg: "No rooms available to join." }, 'system');
             }
         });
 
-        function updateRoomList(roomsArray) {
-            roomListEl.innerHTML = ''; // Clear existing list
+        function updateRoomListUI(roomsArray) {
+            roomListEl.innerHTML = '';
+            if (!roomsArray || roomsArray.length === 0) {
+                roomListEl.innerHTML = '<li>No rooms defined.</li>'; return;
+            }
             roomsArray.forEach(room => {
                 const li = document.createElement('li');
                 const button = document.createElement('button');
@@ -169,19 +200,26 @@
                 li.appendChild(button);
                 roomListEl.appendChild(li);
             });
-             // Set first room as active if currentRoom is not set yet
-            if(!currentRoom && roomsArray.length > 0) {
-               // This logic has moved to connection_ack where client joins first room
-            } else if (currentRoom) {
-                updateActiveRoomButton(currentRoom);
-            }
         }
+
+        socket.on('past_messages', function(data){
+            if (data.room === currentRoom) {
+                messagesEl.innerHTML = ''; // Clear existing messages first
+                addMessageToList({ msg: `--- Chat history for '${escapeHTML(data.room)}' ---` }, 'system');
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => addMessageToList(msg, 'chat', true));
+                } else {
+                    addMessageToList({ msg: `No messages yet in '${escapeHTML(data.room)}'.` }, 'system');
+                }
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+        });
 
         roomListEl.addEventListener('click', function(e) {
             if (e.target.tagName === 'BUTTON') {
-                const roomName = e.target.dataset.room;
-                if (roomName !== currentRoom) {
-                    socket.emit('join_room_request', { room: roomName });
+                const roomNameToJoin = e.target.dataset.room;
+                if (roomNameToJoin && roomNameToJoin !== currentRoom) {
+                    socket.emit('join_room_request', { room: roomNameToJoin });
                 }
             }
         });
@@ -189,22 +227,19 @@
         socket.on('joined_room_ack', function(data) {
             currentRoom = data.room;
             messagesEl.innerHTML = '';
-            addMessageToList({ msg: `You joined '${escapeHTML(currentRoom)}'.` }, 'system');
-            updateActiveRoomButton(currentRoom);
+            updateActiveRoomButtonUI(currentRoom);
             inputEl.disabled = data.is_muted;
             inputEl.placeholder = data.is_muted ? "You are muted in this room." : "Type a message...";
             inputEl.focus();
+            // Past messages are now requested by server on successful join.
         });
 
         if (createRoomBtn) {
             createRoomBtn.addEventListener('click', function() {
                 const roomName = newRoomNameInput.value.trim();
-                if (roomName) {
-                    socket.emit('create_room_request', { room_name: roomName });
-                    newRoomNameInput.value = '';
-                } else {
-                    alert('Please enter a room name.');
-                }
+                if (roomName) socket.emit('create_room_request', { room_name: roomName });
+                else alert('Room name required.');
+                newRoomNameInput.value = '';
             });
         }
 
@@ -217,46 +252,35 @@
         });
 
         messagesEl.addEventListener('click', function(e){
-            if(e.target.classList.contains('mute-btn')){
-                const usernameToMute = e.target.dataset.username;
-                if(usernameToMute && currentRoom){
-                    console.log(`Requesting mute/unmute for ${usernameToMute} in room ${currentRoom}`);
-                    socket.emit('mute_user_request', {username_to_mute: usernameToMute});
+            const target = e.target;
+            if(target.classList.contains('mute-btn')){
+                const usernameToMute = target.dataset.username;
+                if(usernameToMute && currentRoom) socket.emit('mute_user_request', {username_to_mute: usernameToMute});
+            } else if (target.classList.contains('delete-btn')){
+                const messageIdToDelete = target.dataset.messageId;
+                if(messageIdToDelete && currentRoom && confirm("Delete this message? This cannot be undone.")) {
+                    socket.emit('delete_message_request', {message_id: messageIdToDelete});
                 }
             }
         });
 
         socket.on('new_message', function(data) {
-             // The server should send the actual username for potential mute actions.
-             // Assuming data.username is display_name, we might need more.
-             // Let's refine the data structure server sends.
-             // For now, if 'original_username' is provided, use it.
-            addMessageToList(data);
+            // Check if the message is for the current room before adding
+            if (currentRoom && (data.room === currentRoom || !data.room) ) { // !data.room for global system msgs
+                 addMessageToList(data);
+            }
         });
 
-        socket.on('system_message', function(data) {
-            addMessageToList(data, 'system');
-        });
+        socket.on('system_message', function(data) { addMessageToList(data, 'system'); });
+        socket.on('error_msg', function(data) { addMessageToList({msg: `SERVER ERROR: ${escapeHTML(data.msg)}` }, 'system');});
 
-        socket.on('error_msg', function(data) {
-            addMessageToList({ msg: `Error: ${escapeHTML(data.msg)}` }, 'system');
-        });
-
-        socket.on('new_room_available', function(data) {
-            // Just re-fetch and update the whole room list, simpler for PoC
-            // In a more optimized app, you'd just append.
-            // Let server send full list or we request it. For now, let's make client simpler:
-            const li = document.createElement('li');
-            const button = document.createElement('button');
-            button.dataset.room = data.room_name;
-            button.textContent = escapeHTML(data.room_name);
-            li.appendChild(button);
-            roomListEl.appendChild(li);
-            addMessageToList({ msg: `New room '${escapeHTML(data.room_name)}' available (created by ${escapeHTML(data.creator)}).` }, 'system');
+        socket.on('new_room_available_update', function(data) {
+            updateRoomListUI(data.all_rooms); // Server sends the full updated list
+            addMessageToList({ msg: `New room '${escapeHTML(data.new_room_name)}' created by ${escapeHTML(data.creator)}.` }, 'system');
         });
 
         socket.on('mute_status_update', function(data) {
-            if (data.room === currentRoom) { // Only care if it's for my current room
+            if (data.room === currentRoom) {
                 inputEl.disabled = data.is_muted;
                 inputEl.placeholder = data.is_muted ? "You are muted in this room." : "Type a message...";
                 const action = data.is_muted ? "muted" : "unmuted";
@@ -264,33 +288,37 @@
             }
         });
 
-        // For Admin panel
+        socket.on('message_deleted_ack', function(data){
+            if (data.room === currentRoom) {
+                const messageElement = messagesEl.querySelector(`li[data-message-id="${data.message_id}"]`);
+                if(messageElement){
+                    messageElement.innerHTML = `<em>Message deleted. (${formatTimestamp(new Date().toISOString())})</em>`;
+                    messageElement.classList.add('deleted-message');
+                    ['my-message', 'other-message'].forEach(c => messageElement.classList.remove(c));
+                }
+            }
+        });
+
         socket.on('admin_user_list_update', function(userData) {
             if (userRole === 'administrator' && adminUserListEl) {
-                adminUserListEl.innerHTML = ''; // Clear previous list
-                if (userData.length === 0) {
-                    adminUserListEl.innerHTML = '<li>No users currently connected.</li>';
-                } else {
+                adminUserListEl.innerHTML = '';
+                userCountEl.textContent = userData.length;
+                if (userData.length === 0) { adminUserListEl.innerHTML = '<li>No users currently connected.</li>'; }
+                else {
                     userData.forEach(user => {
                         const li = document.createElement('li');
-                        li.textContent = `${escapeHTML(user.display_name)} (${escapeHTML(user.role)}) - Room: ${escapeHTML(user.current_room || 'N/A')}`;
+                        li.textContent = `${escapeHTML(user.display_name)} (${escapeHTML(user.role)}) Room: ${escapeHTML(user.current_room || 'N/A')}`;
                         adminUserListEl.appendChild(li);
                     });
                 }
             }
         });
 
-        socket.on('connect_error', (err) => {
-            console.error("Socket.IO Connection Error:", err);
-            addMessageToList({msg: `Socket.IO Connection Error: ${err.message}. Please try refreshing.`}, 'system');
-        });
-        socket.on('disconnect', (reason) => {
-            console.log("Socket.IO Disconnected:", reason);
-            addMessageToList({msg: `Disconnected from chat server: ${reason}. UI may not update.`}, 'system');
-            // You might want to disable input or show a persistent disconnected message.
-            inputEl.disabled = true;
-            inputEl.placeholder = "Disconnected from server.";
-        });
+        socket.on('connect_error', (err) => { console.error("Socket.IO Connection Error:", err); addMessageToList({msg: `Connection Error (${err.message}). Please refresh.`}, 'system');});
+        socket.on('disconnect', (reason) => { console.log("Socket.IO Disconnected:", reason); addMessageToList({msg: `Disconnected: ${reason}. Reconnecting attempt may occur.`}, 'system'); inputEl.disabled = true; inputEl.placeholder = "Disconnected - attempting to reconnect...";});
+
+        // Connect the socket after all handlers are defined and session info is available.
+        socket.connect();
 
     </script>
 </body>

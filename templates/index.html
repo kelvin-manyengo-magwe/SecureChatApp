@@ -6,39 +6,50 @@
     <title>Secure Web Chat - {{ session.display_name }}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        /* Basic styling - keep or improve */
-        body { font-family: Arial, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f4f4f4; }
-        #top-bar { display: flex; justify-content: space-between; align-items: center; background-color: #333; color: white; padding: 10px 20px; }
-        #top-bar h1 { margin: 0; font-size: 1.5em; }
-        #top-bar a { color: #ddd; text-decoration: none; padding: 5px 10px; border-radius: 3px; }
-        #top-bar a:hover { background-color: #555; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f0f2f5; color: #333; }
+        #top-bar { display: flex; justify-content: space-between; align-items: center; background-color: #4a5568; /* Tailwind Slate 700 */ color: white; padding: 12px 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #top-bar h1 { margin: 0; font-size: 1.6em; font-weight: 600; }
+        #top-bar .user-info { font-size: 0.95em; }
+        #top-bar a { color: #cbd5e0; /* Tailwind Slate 300 */ text-decoration: none; padding: 6px 12px; border-radius: 4px; margin-left: 15px; transition: background-color 0.2s; }
+        #top-bar a:hover { background-color: #2d3748; /* Tailwind Slate 800 */ }
         #main-content { display: flex; flex-grow: 1; overflow: hidden; }
-        #sidebar { width: 200px; background-color: #e9e9e9; padding: 15px; border-right: 1px solid #ccc; display: flex; flex-direction: column; }
-        #sidebar h3 { margin-top: 0; margin-bottom: 10px; }
-        #sidebar ul { list-style-type: none; padding: 0; margin: 0 0 20px 0; }
-        #sidebar ul li button { display: block; width: 100%; padding: 8px; margin-bottom: 5px; background-color: #f9f9f9; border: 1px solid #ddd; text-align: left; cursor: pointer; border-radius: 3px; }
-        #sidebar ul li button:hover, #sidebar ul li button.active { background-color: #dcf8c6; }
-        #sidebar .create-room-section { margin-top: auto; } /* Pushes to bottom */
-        #chat-container { flex-grow: 1; display: flex; flex-direction: column; max-width: 800px; width: 100%; margin: 0 auto; background-color: white; } /* Removed border & shadow */
-        #messages { list-style-type: none; margin: 0; padding: 20px; overflow-y: auto; flex-grow: 1; border-bottom: 1px solid #eee; }
-        /* Message styles (my-message, other-message, system-message) same as before */
-        #messages li { padding: 8px 12px; margin-bottom: 10px; border-radius: 5px; word-wrap: break-word; max-width: 80%; }
-        #messages li.my-message { background-color: #dcf8c6; margin-left: auto; text-align: right; }
-        #messages li.other-message { background-color: #f1f0f0; margin-right: auto; text-align: left; }
-        #messages li.system-message { font-style: italic; color: #777; text-align: center; background-color: transparent; font-size: 0.9em; }
-        #messages li strong { display: block; margin-bottom: 4px; font-size: 0.9em; color: #555; }
-        #form { display: flex; padding: 10px; border-top: 1px solid #eee;}
-        #input { border: 1px solid #ccc; padding: 10px; flex-grow: 1; border-radius: 5px 0 0 5px; }
-        #send-button { background-color: #5cb85c; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 0 5px 5px 0; }
-        #send-button:hover { background-color: #4cae4c; }
+        #sidebar { width: 250px; background-color: #edf2f7; /* Tailwind Slate 200 */ padding: 20px; border-right: 1px solid #e2e8f0; /* Tailwind Slate 300 */ display: flex; flex-direction: column; overflow-y: auto; }
+        #sidebar h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.1em; color: #2d3748; border-bottom: 1px solid #cbd5e0; padding-bottom: 8px;}
+        #sidebar ul { list-style-type: none; padding: 0; margin: 0 0 25px 0; }
+        #sidebar ul li button { display: block; width: 100%; padding: 10px 12px; margin-bottom: 6px; background-color: #fff; border: 1px solid #cbd5e0; text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.95em; transition: background-color 0.2s, border-color 0.2s; }
+        #sidebar ul li button:hover { background-color: #e2e8f0; border-color: #a0aec0; }
+        #sidebar ul li button.active { background-color: #68d391; /* Tailwind Green 400 */ color: white; border-color: #68d391; font-weight: 500; }
+        #sidebar .create-room-section input[type="text"] { width: calc(100% - 22px); padding: 8px 10px; margin-bottom: 8px; border: 1px solid #cbd5e0; border-radius: 4px; }
+        #sidebar .create-room-section button { width: 100%; padding: 9px; background-color: #4299e1; /* Tailwind Blue 500 */ color:white; border:none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;}
+        #sidebar .create-room-section button:hover { background-color: #3182ce; /* Tailwind Blue 600 */ }
+        #chat-wrapper { flex-grow: 1; display: flex; flex-direction: column; background-color: #fff; }
+        #chat-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0px 20px 0px 20px; } /* padding for scrollbar space */
+        #messages { list-style-type: none; margin: 0; padding: 20px 0; overflow-y: auto; flex-grow: 1; }
+        #messages li { padding: 10px 15px; margin-bottom: 12px; border-radius: 8px; word-wrap: break-word; max-width: 75%; line-height: 1.4; }
+        #messages li.my-message { background-color: #68d391; /* Tailwind Green 400 */ color: white; margin-left: auto; text-align: left; } /* Changed my messages to left align text too */
+        #messages li.other-message { background-color: #e2e8f0; /* Tailwind Slate 300 */ color: #2d3748; margin-right: auto; }
+        #messages li strong { font-weight: 600; display: inline-block; margin-right: 8px; }
+        #messages li .msg-meta { font-size: 0.8em; color: #a0aec0; margin-top:3px; display:block; }
+        #messages li.my-message .msg-meta { color: #f7fafc; } /* Lighter meta for dark bg */
+        #messages li.other-message .mute-btn { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; background-color: #ecc94b; border:none; border-radius:3px; cursor:pointer;}
+        #messages li.other-message .mute-btn:hover { background-color: #d69e2e; }
+        #messages li.system-message { font-style: italic; color: #718096; /* Tailwind Slate 500 */ text-align: center; background-color: transparent; font-size: 0.9em; padding: 8px 0; }
+        #form { display: flex; padding: 15px 20px; border-top: 1px solid #e2e8f0; background-color: #f7fafc; /* Tailwind Slate 100 */}
+        #input { border: 1px solid #cbd5e0; padding: 12px; flex-grow: 1; border-radius: 5px 0 0 5px; font-size: 1em; }
+        #input:disabled { background-color: #edf2f7; cursor: not-allowed; }
+        #send-button { background-color: #48bb78; /* Tailwind Green 500 */ color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 0 5px 5px 0; font-size: 1em; transition: background-color 0.2s;}
+        #send-button:hover { background-color: #38a169; /* Tailwind Green 600 */ }
+        #admin-panel { background-color: #f7fafc; padding: 15px; border-top: 1px solid #e2e8f0; margin-top: auto; }
+        #admin-panel h4 { margin-top: 0; }
+        #admin-user-list li { font-size: 0.9em; padding: 4px 0; }
     </style>
 </head>
 <body>
     <div id="top-bar">
-        <h1>Secure Web Chat</h1>
-        <div>
+        <h1>Secure Web Chat - <span id="current-room-display">General Chat</span></h1>
+        <div class="user-info">
             <span>Welcome, {{ session.display_name }} ({{ session.role }})</span>
-            <a href="{{ url_for('logout') }}" style="margin-left: 15px;">Logout</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     </div>
 
@@ -46,103 +57,146 @@
         <div id="sidebar">
             <h3>Chat Rooms</h3>
             <ul id="room-list">
-                {% for room in rooms %}
-                    <li><button data-room="{{ room }}">{{ room }}</button></li>
-                {% endfor %}
+                {# Rooms will be populated by JavaScript #}
             </ul>
             {% if user_role == 'teacher' or user_role == 'administrator' %}
-            <div class="create-room-section">
+            <div class="create-room-section" style="margin-top: 20px;">
                 <h4>Create New Room</h4>
-                <input type="text" id="new-room-name" placeholder="Enter room name" style="width: calc(100% - 10px); padding: 5px; margin-bottom: 5px;">
-                <button id="create-room-btn" style="width: 100%; padding: 8px; background-color: #007bff; color:white; border:none; border-radius: 3px;">Create Room</button>
+                <input type="text" id="new-room-name" placeholder="Enter room name (max 50 chars)" maxlength="50" required>
+                <button id="create-room-btn">Create Room</button>
+            </div>
+            {% endif %}
+
+            {% if user_role == 'administrator' %}
+            <div id="admin-panel" style="margin-top:auto;"> {# Pushes to bottom #}
+                <h4>Connected Users</h4>
+                <ul id="admin-user-list">
+                    {# User list will be populated here by JS #}
+                    <li>Loading...</li>
+                </ul>
             </div>
             {% endif %}
         </div>
 
-        <div id="chat-container">
-            <ul id="messages"></ul>
+        <div id="chat-wrapper">
+            <div id="chat-container">
+                <ul id="messages"></ul>
+            </div>
             <form id="form" action="">
-                <input id="input" autocomplete="off" placeholder="Type a message..." /><button id="send-button">Send</button>
+                <input id="input" autocomplete="off" placeholder="Type a message..." required /><button id="send-button" type="submit">Send</button>
             </form>
         </div>
     </div>
 
     <script>
-        const socket = io(); // Connects to the same host that serves the page
-        let currentRoom = "{{ rooms[0] }}"; // Default to the first room
-        const userDisplayName = "{{ session.display_name }}"; // Get user's name from Flask session
+        const socket = io();
+        let currentRoom = "";
+        const userDisplayName = "{{ session.display_name }}";
+        const userRole = "{{ user_role }}";
+        const currentUsername = "{{ current_username }}"; // The actual username, not display name
 
-        const messages = document.getElementById('messages');
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
-        const roomList = document.getElementById('room-list');
+        const messagesEl = document.getElementById('messages');
+        const formEl = document.getElementById('form');
+        const inputEl = document.getElementById('input');
+        const roomListEl = document.getElementById('room-list');
         const createRoomBtn = document.getElementById('create-room-btn');
         const newRoomNameInput = document.getElementById('new-room-name');
+        const currentRoomDisplayEl = document.getElementById('current-room-display');
+        const adminUserListEl = document.getElementById('admin-user-list');
+
+        function escapeHTML(str) {
+    // Basic escaping for display in HTML. More robust libraries (e.g. DOMPurify) for complex scenarios.
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&',
+        '<': '<',
+        '>': '>',
+        "'": "'",
+        '"': '"'
+    }[tag] || tag));
+}
 
 
         function addMessageToList(data, type = 'other') {
             const item = document.createElement('li');
-            let content = '';
+            let contentHTML = '';
             if (type === 'system') {
                 item.classList.add('system-message');
-                content = data.msg;
+                contentHTML = escapeHTML(data.msg);
             } else {
-                content = `<strong>${data.username}</strong>${data.msg}`;
-                if (data.username === userDisplayName) { // Compare with current user's display name
-                    item.classList.add('my-message');
-                } else {
-                    item.classList.add('other-message');
+                const isMyMessage = data.username === userDisplayName;
+                item.classList.add(isMyMessage ? 'my-message' : 'other-message');
+
+                contentHTML = `<strong>${escapeHTML(data.username)}</strong> ${escapeHTML(data.msg)}`;
+
+                // Add mute button for teachers on other users' messages (if they are students)
+                if (userRole === 'teacher' && !isMyMessage && data.role === 'student') {
+                    // Pass actual username (not display name) for mute action
+                    const actualUsernameToMute = data.original_username || data.username; // Fallback
+                    contentHTML += ` <button class="mute-btn" data-username="${escapeHTML(actualUsernameToMute)}">Mute/Unmute</button>`;
                 }
             }
-            item.innerHTML = content; // Use innerHTML if content includes HTML (like <strong>)
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
+            item.innerHTML = contentHTML;
+            messagesEl.appendChild(item);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
         function updateActiveRoomButton(roomName) {
+            currentRoomDisplayEl.textContent = escapeHTML(roomName) || "No Room";
             document.querySelectorAll('#room-list button').forEach(btn => {
-                if (btn.dataset.room === roomName) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                btn.classList.toggle('active', btn.dataset.room === roomName);
             });
-            document.querySelector('#top-bar h1').textContent = `Secure Web Chat - ${roomName}`;
-
         }
 
-        // Initial join for default room
-        socket.on('connect', () => {
-            console.log('Socket.IO connected!');
-            // We handle initial room joining on server side connect for simplicity now
-            // If server doesn't auto-join, client should emit('join_room') here.
-            // Update UI for default room
-            if (roomList.querySelector('button')) { // if rooms exist
-                const defaultRoomName = roomList.querySelector('button').dataset.room;
-                updateActiveRoomButton(defaultRoomName);
+        socket.on('connection_ack', (data) => {
+            console.log('Socket.IO connection acknowledged by server.', data);
+            updateRoomList(data.rooms);
+            // Client explicitly requests to join the first room or a stored preferred room.
+            const initialRoom = data.rooms.length > 0 ? data.rooms[0] : null;
+            if(initialRoom) {
+                socket.emit('join_room_request', { room: initialRoom });
+            } else {
+                 addMessageToList({ msg: "No rooms available to join initially." }, 'system');
             }
         });
 
+        function updateRoomList(roomsArray) {
+            roomListEl.innerHTML = ''; // Clear existing list
+            roomsArray.forEach(room => {
+                const li = document.createElement('li');
+                const button = document.createElement('button');
+                button.dataset.room = room;
+                button.textContent = escapeHTML(room);
+                li.appendChild(button);
+                roomListEl.appendChild(li);
+            });
+             // Set first room as active if currentRoom is not set yet
+            if(!currentRoom && roomsArray.length > 0) {
+               // This logic has moved to connection_ack where client joins first room
+            } else if (currentRoom) {
+                updateActiveRoomButton(currentRoom);
+            }
+        }
 
-        roomList.addEventListener('click', function(e) {
+        roomListEl.addEventListener('click', function(e) {
             if (e.target.tagName === 'BUTTON') {
                 const roomName = e.target.dataset.room;
                 if (roomName !== currentRoom) {
-                    socket.emit('join_room', { room: roomName });
+                    socket.emit('join_room_request', { room: roomName });
                 }
             }
         });
 
         socket.on('joined_room_ack', function(data) {
             currentRoom = data.room;
-            messages.innerHTML = ''; // Clear messages from old room
-            addMessageToList({ msg: `You joined '${currentRoom}'.` }, 'system');
+            messagesEl.innerHTML = '';
+            addMessageToList({ msg: `You joined '${escapeHTML(currentRoom)}'.` }, 'system');
             updateActiveRoomButton(currentRoom);
-            input.focus();
+            inputEl.disabled = data.is_muted;
+            inputEl.placeholder = data.is_muted ? "You are muted in this room." : "Type a message...";
+            inputEl.focus();
         });
 
-
-        if (createRoomBtn) { // Element exists if user role allows
+        if (createRoomBtn) {
             createRoomBtn.addEventListener('click', function() {
                 const roomName = newRoomNameInput.value.trim();
                 if (roomName) {
@@ -154,15 +208,29 @@
             });
         }
 
-        form.addEventListener('submit', function(e) {
+        formEl.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (input.value) {
-                socket.emit('chat_message', { msg: input.value }); // Server uses session for room
-                input.value = '';
+            if (inputEl.value && !inputEl.disabled) {
+                socket.emit('chat_message', { msg: inputEl.value });
+                inputEl.value = '';
+            }
+        });
+
+        messagesEl.addEventListener('click', function(e){
+            if(e.target.classList.contains('mute-btn')){
+                const usernameToMute = e.target.dataset.username;
+                if(usernameToMute && currentRoom){
+                    console.log(`Requesting mute/unmute for ${usernameToMute} in room ${currentRoom}`);
+                    socket.emit('mute_user_request', {username_to_mute: usernameToMute});
+                }
             }
         });
 
         socket.on('new_message', function(data) {
+             // The server should send the actual username for potential mute actions.
+             // Assuming data.username is display_name, we might need more.
+             // Let's refine the data structure server sends.
+             // For now, if 'original_username' is provided, use it.
             addMessageToList(data);
         });
 
@@ -171,18 +239,45 @@
         });
 
         socket.on('error_msg', function(data) {
-            addMessageToList({ msg: `Error: ${data.msg}` }, 'system'); // Display errors as system messages
-             // Or use an alert: alert(`Error: ${data.msg}`);
+            addMessageToList({ msg: `Error: ${escapeHTML(data.msg)}` }, 'system');
         });
 
         socket.on('new_room_available', function(data) {
-            const item = document.createElement('li');
+            // Just re-fetch and update the whole room list, simpler for PoC
+            // In a more optimized app, you'd just append.
+            // Let server send full list or we request it. For now, let's make client simpler:
+            const li = document.createElement('li');
             const button = document.createElement('button');
             button.dataset.room = data.room_name;
-            button.textContent = data.room_name;
-            item.appendChild(button);
-            roomList.appendChild(item);
-            addMessageToList({ msg: `New room '${data.room_name}' available (created by ${data.creator}).` }, 'system');
+            button.textContent = escapeHTML(data.room_name);
+            li.appendChild(button);
+            roomListEl.appendChild(li);
+            addMessageToList({ msg: `New room '${escapeHTML(data.room_name)}' available (created by ${escapeHTML(data.creator)}).` }, 'system');
+        });
+
+        socket.on('mute_status_update', function(data) {
+            if (data.room === currentRoom) { // Only care if it's for my current room
+                inputEl.disabled = data.is_muted;
+                inputEl.placeholder = data.is_muted ? "You are muted in this room." : "Type a message...";
+                const action = data.is_muted ? "muted" : "unmuted";
+                addMessageToList({ msg: `You have been ${action} in this room.` }, 'system');
+            }
+        });
+
+        // For Admin panel
+        socket.on('admin_user_list_update', function(userData) {
+            if (userRole === 'administrator' && adminUserListEl) {
+                adminUserListEl.innerHTML = ''; // Clear previous list
+                if (userData.length === 0) {
+                    adminUserListEl.innerHTML = '<li>No users currently connected.</li>';
+                } else {
+                    userData.forEach(user => {
+                        const li = document.createElement('li');
+                        li.textContent = `${escapeHTML(user.display_name)} (${escapeHTML(user.role)}) - Room: ${escapeHTML(user.current_room || 'N/A')}`;
+                        adminUserListEl.appendChild(li);
+                    });
+                }
+            }
         });
 
         socket.on('connect_error', (err) => {
@@ -191,7 +286,10 @@
         });
         socket.on('disconnect', (reason) => {
             console.log("Socket.IO Disconnected:", reason);
-            addMessageToList({msg: `Disconnected from chat server: ${reason}.`}, 'system');
+            addMessageToList({msg: `Disconnected from chat server: ${reason}. UI may not update.`}, 'system');
+            // You might want to disable input or show a persistent disconnected message.
+            inputEl.disabled = true;
+            inputEl.placeholder = "Disconnected from server.";
         });
 
     </script>

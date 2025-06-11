@@ -190,7 +190,7 @@ SecureChatApp/
 ## 9. Author
 
 *   [Group 40]
-*   [Link to your GitHub profile or project page if different]
+*   [https://github.com/kelvin-manyengo-magwe/SecureChatApp]
 
 ## 10. License
 

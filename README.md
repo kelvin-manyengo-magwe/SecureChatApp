@@ -191,7 +191,3 @@ SecureChatApp/
 
 *   [Group 40]
 *   [https://github.com/kelvin-manyengo-magwe/SecureChatApp]
-
-## 10. License
-
-This project is licensed under the MIT License.
